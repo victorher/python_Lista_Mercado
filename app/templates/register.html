@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Actualizar Contraseña - Mercado Inteligente{% endblock %}
+{% block title %}Registrarse - Mercado Inteligente{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -13,17 +13,22 @@
 <div class="login-container">
     <div class="card shadow-sm border-0">
         <div class="card-body p-4">
-            <h3 class="text-center mb-4">Actualizar Contraseña</h3>
-            <p class="text-muted small text-center mb-4">Por seguridad, debes establecer una nueva contraseña que cumpla con los parámetros requeridos.</p>
+            <h2 class="text-center mb-4">📝 Registrarse</h2>
 
-            <form method="POST" action="{{ url_for('mercado.change_password') }}">
+            <form method="POST">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-
                 <div class="mb-3">
-                    <label for="new_password" class="form-label">Nueva Contraseña</label>
-                    <input type="password" name="new_password" class="form-control" id="new_password" required autofocus>
+                    <label for="username" class="form-label">Nombre de Usuario</label>
+                    <input type="text" name="username" class="form-control" id="username" required autofocus>
                 </div>
-
+                <div class="mb-3">
+                    <label for="email" class="form-label">Correo Electrónico</label>
+                    <input type="email" name="email" class="form-control" id="email" required>
+                </div>
+                <div class="mb-3">
+                    <label for="password" class="form-label">Contraseña</label>
+                    <input type="password" name="password" class="form-control" id="password" required>
+                </div>
                 <div class="mb-3">
                     <label for="confirm_password" class="form-label">Confirmar Contraseña</label>
                     <input type="password" name="confirm_password" class="form-control" id="confirm_password" required>
@@ -39,10 +44,12 @@
                     </ul>
                 </div>
 
-                <button type="submit" class="btn btn-primary w-100">Actualizar Contraseña</button>
+                <button type="submit" class="btn btn-primary w-100">Crear Cuenta</button>
             </form>
+        </div>
+        <div class="card-footer text-muted text-center border-0 bg-transparent">
+            <small>¿Ya tienes una cuenta? <a href="{{ url_for('mercado.login') }}" class="text-decoration-none">Inicia sesión aquí</a></small>
         </div>
     </div>
 </div>
 {% endblock %}
-

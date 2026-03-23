@@ -17,16 +17,37 @@ class Usuario(db.Model, UserMixin):
     username: Mapped[str] = mapped_column(String(50), unique=True, nullable=False)
     email: Mapped[Optional[str]] = mapped_column(String(120), unique=True, nullable=True) 
     password_hash: Mapped[str] = mapped_column(String(256), nullable=False)
+    is_temporary_password: Mapped[bool] = mapped_column(Boolean, default=False)
 
     def __init__(self, username: str, email: Optional[str] = None):
         self.username = username
         self.email = email
+        self.is_temporary_password = False
 
-    def set_password(self, password):
+    def set_password(self, password, is_temporary=False):
         self.password_hash = generate_password_hash(password)
+        self.is_temporary_password = is_temporary
 
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
+
+    @staticmethod
+    def validate_password_complexity(password):
+        """Valida que la contraseña cumpla con los requisitos de seguridad."""
+        if len(password) < 8:
+            return False, "La contraseña debe tener al menos 8 caracteres."
+        
+        import re
+        if not re.search(r"[a-z]", password):
+            return False, "La contraseña debe contener al menos una letra minúscula."
+        if not re.search(r"[A-Z]", password):
+            return False, "La contraseña debe contener al menos una letra mayúscula."
+        if not re.search(r"\d", password):
+            return False, "La contraseña debe contener al menos un número."
+        if not re.search(r"[{,.\*/\\@}]", password):
+            return False, "La contraseña debe contener al menos un carácter especial del conjunto {, . * / \ @}."
+        
+        return True, ""
 
     def get_reset_token(self):
         """Genera un token seguro que expira en 30 minutos."""

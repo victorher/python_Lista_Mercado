@@ -3,81 +3,77 @@
 {% block title %}Mi Lista - Mercado Inteligente{% endblock %}
 
 {% block content %}
-<!-- Panel Agregar -->
-<div class="card mb-4 shadow-sm border-0">
-    <div class="card-body">
-        <h5 class="card-title mb-3">Agregar nuevo producto</h5>
-        <form action="{{ url_for('mercado.agregar') }}" method="POST" class="row g-3">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <div class="col-md-4">
-                <input type="text" name="nombre" class="form-control" placeholder="Ej: Leche" required
-                    autocomplete="off">
-            </div>
-            <div class="col-md-2">
-                <input type="number" name="cantidad" class="form-control" value="1" min="1" title="Cantidad">
-            </div>
-            <div class="col-md-2">
-                <select name="unidad_medida" class="form-select" title="Unidad de Medida">
-                    <option value="unidades">Unidades</option>
-                    <option value="litros">L</option>
-                    <option value="mililitros">ml</option>
-                    <option value="gramos">g</option>
-                    <option value="kilogramos">kg</option>
-                    <option value="libras">Lb</option>
-                    <option value="onzas">Oz</option>
-                </select>
-            </div>
-            <div class="col-md-2">
-                <input type="date" name="vencimiento" class="form-control" title="Fecha de Vencimiento (Opcional)">
-            </div>
-            <div class="col-md-2">
-                <button type="submit" class="btn btn-success w-100">+ Agregar</button>
-            </div>
-        </form>
-    </div>
-</div>
-
-<!-- Lista de Productos -->
-<div class="list-group shadow-sm border-0">
-    {% for prod in productos %}
-    <div
-        class="list-group-item d-flex justify-content-between align-items-center {% if prod.tengo_en_casa %}bg-light{% endif %} border-0 border-bottom">
-
-        <div class="d-flex align-items-center">
-            <a href="{{ url_for('mercado.toggle_comprado', id=prod.id) }}"
-                class="text-decoration-none {% if prod.tengo_en_casa %}text-muted{% else %}text-dark{% endif %}"
-                title="Click para marcar/desmarcar">
-                <span class="fs-5 {% if prod.tengo_en_casa %}producto-comprado{% endif %}">
-                    {{ prod.nombre }}
-                    <small class="text-secondary">
-                        (x{{ prod.cantidad }} {{ prod.unidad_medida if prod.unidad_medida else '' }})
-                    </small>
-                </span>
-            </a>
+    <!-- Panel Agregar -->
+    <div class="card mb-4 shadow-sm border-0">
+        <div class="card-body">
+            <h5 class="card-title mb-3">Agregar nuevo producto</h5>
+            <form action="{{ url_for('mercado.agregar') }}" method="POST" class="row g-3">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="col-md-4">
+                    <input type="text" name="nombre" class="form-control" placeholder="Ej: Leche" required autocomplete="off">
+                </div>
+                <div class="col-md-2">
+                    <input type="number" name="cantidad" class="form-control" value="1" min="1" title="Cantidad">
+                </div>
+                <div class="col-md-2">
+                    <select name="unidad_medida" class="form-select" title="Unidad de Medida">
+                        <option value="unidades">Unidades</option>
+                        <option value="litros">L</option>
+                        <option value="mililitros">ml</option>
+                        <option value="gramos">g</option>
+                        <option value="kilogramos">Kg</option>
+                        <option value="libras">Lb</option>
+                        <option value="onzas">Oz</option>
+                        <option value="paca">Pk</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <input type="date" name="vencimiento" class="form-control" title="Fecha de Vencimiento (Opcional)">
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-success w-100">+ Agregar</button>
+                </div>
+            </form>
         </div>
+    </div>
 
-        <div>
-            {% if prod.fecha_vencimiento and not prod.tengo_en_casa %}
-            {% if prod.estado_vencimiento == 'vencido' %}
-            <span class="badge bg-danger rounded-pill" title="{{ prod.fecha_vencimiento }}">¡{{
-                prod.dias_vencimiento_texto }}!</span>
-            {% elif prod.estado_vencimiento == 'por_vencer' %}
-            <span class="badge bg-warning text-dark rounded-pill" title="{{ prod.fecha_vencimiento }}">{{
-                prod.dias_vencimiento_texto }}</span>
-            {% else %}
-            <span class="badge bg-success rounded-pill" title="{{ prod.fecha_vencimiento }}">{{
-                prod.dias_vencimiento_texto }}</span>
-            {% endif %}
-            {% elif prod.tengo_en_casa %}
-            <span class="badge bg-secondary rounded-pill">En casa</span>
-            {% endif %}
+    <!-- Lista de Productos -->
+    <div class="list-group shadow-sm border-0">
+        {% for prod in productos %}
+        <div class="list-group-item d-flex justify-content-between align-items-center {% if prod.tengo_en_casa %}bg-light{% endif %} border-0 border-bottom">
+            
+            <div class="d-flex align-items-center">
+                <a href="{{ url_for('mercado.toggle_comprado', id=prod.id) }}" 
+                   class="text-decoration-none {% if prod.tengo_en_casa %}text-muted{% else %}text-dark{% endif %}"
+                   title="Click para marcar/desmarcar">
+                    <span class="fs-5 {% if prod.tengo_en_casa %}producto-comprado{% endif %}">
+                        {{ prod.nombre }} 
+                        <small class="text-secondary">
+                            (x{{ prod.cantidad }} {{ prod.unidad_medida if prod.unidad_medida else '' }})
+                        </small>
+                    </span>
+                </a>
+            </div>
+
+            <div>
+                {% if prod.fecha_vencimiento and not prod.tengo_en_casa %}
+                    {% if prod.estado_vencimiento == 'vencido' %}
+                        <span class="badge bg-danger rounded-pill" title="{{ prod.fecha_vencimiento }}">¡{{ prod.dias_vencimiento_texto }}!</span>
+                    {% elif prod.estado_vencimiento == 'por_vencer' %}
+                        <span class="badge bg-warning text-dark rounded-pill" title="{{ prod.fecha_vencimiento }}">{{ prod.dias_vencimiento_texto }}</span>
+                    {% else %}
+                        <span class="badge bg-success rounded-pill" title="{{ prod.fecha_vencimiento }}">{{ prod.dias_vencimiento_texto }}</span>
+                    {% endif %}
+                {% elif prod.tengo_en_casa %}
+                    <span class="badge bg-secondary rounded-pill">En casa</span>
+                {% endif %}
+            </div>
+            
         </div>
-
+        {% else %}
+        <div class="text-center p-5 bg-white border rounded border-0">
+            <p class="text-muted fs-4">Tu lista está vacía. ¡Agrega algo para empezar!</p>
+        </div>
+        {% endfor %}
     </div>
-    {% else %}
-    <div class="text-center p-5 bg-white border rounded border-0">
-        <p class="text-muted fs-4">Tu lista está vacía. ¡Agrega algo para empezar!</p>
-    </div>
-    {% endfor %}
-</div>
 {% endblock %}

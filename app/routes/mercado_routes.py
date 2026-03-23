@@ -1,3 +1,5 @@
+import secrets
+import string
 from flask import Blueprint, render_template, request, redirect, url_for, flash, current_app
 from datetime import datetime
 from flask_login import login_user, logout_user, login_required, current_user
@@ -7,15 +9,34 @@ from .. import mail
 
 bp = Blueprint('mercado', __name__)
 
-def send_reset_email(user):
-    token = user.get_reset_token()
-    msg = Message('Solicitud de Restablecimiento de Contraseña',
+@bp.before_app_request
+def check_temp_password():
+    if current_user.is_authenticated:
+        # Lista de rutas permitidas cuando se tiene contraseña temporal
+        allowed_routes = ['mercado.change_password', 'mercado.logout', 'static']
+        if current_user.is_temporary_password and request.endpoint not in allowed_routes:
+            flash('Debes cambiar tu contraseña temporal antes de continuar.', 'warning')
+            return redirect(url_for('mercado.change_password'))
+
+def generate_random_password(length=12):
+    """Genera una contraseña aleatoria que cumple con los requisitos."""
+    # Conjunto de caracteres especiales solicitado: { , . * / \ @ }
+    special_chars = r"{,.*\/@}"
+    alphabet = string.ascii_letters + string.digits + special_chars
+    while True:
+        password = ''.join(secrets.choice(alphabet) for i in range(length))
+        is_valid, _ = Usuario.validate_password_complexity(password)
+        if is_valid:
+            return password
+
+def send_temp_password_email(user, temp_password):
+    msg = Message('Nueva Contraseña Temporal',
                   sender=current_app.config['MAIL_DEFAULT_SENDER'],
                   recipients=[user.email])
-    msg.body = f'''Para restablecer tu contraseña, visita el siguiente enlace:
-{url_for('mercado.reset_token', token=token, _external=True)}
+    msg.body = f'''Se ha generado una contraseña temporal para tu cuenta.
+Tu contraseña temporal es: {temp_password}
 
-Si no realizaste esta solicitud, simplemente ignora este correo y no se realizarán cambios.
+Inicia sesión con esta contraseña y se te pedirá que la cambies inmediatamente.
 '''
     mail.send(msg)
 
@@ -28,44 +49,103 @@ def reset_request():
         user = Usuario.query.filter_by(email=email).first()
         if user:
             try:
-                send_reset_email(user)
-                flash('Se ha enviado un correo con instrucciones para restablecer tu contraseña.', 'info')
+                temp_pass = generate_random_password()
+                user.set_password(temp_pass, is_temporary=True)
+                db.session.commit()
+                send_temp_password_email(user, temp_pass)
+                flash('Se ha enviado una contraseña temporal a tu correo electrónico.', 'info')
                 return redirect(url_for('mercado.login'))
             except Exception as e:
-                flash('Error al enviar el correo. Por favor, intenta más tarde.', 'danger')
-                # print(f"Mail error: {e}")
+                db.session.rollback()
+                # Imprimir el error real en la consola para diagnóstico (SMTP error, etc.)
+                print(f"DEBUG ERROR ENVÍO CORREO: {str(e)}")
+                flash('Error al procesar la solicitud. Por favor, intenta más tarde.', 'danger')
         else:
             flash('No existe una cuenta con ese correo electrónico.', 'warning')
     return render_template('reset_request.html')
 
-@bp.route('/reset_password/<token>', methods=['GET', 'POST'])
-def reset_token(token):
+@bp.route('/change_password', methods=['GET', 'POST'])
+@login_required
+def change_password():
+    if not current_user.is_temporary_password:
+        return redirect(url_for('mercado.index'))
+    
+    if request.method == 'POST':
+        new_password = request.form.get('new_password', '')
+        confirm_password = request.form.get('confirm_password', '')
+        
+        if not new_password:
+            flash('La nueva contraseña es obligatoria.', 'danger')
+            return render_template('reset_token.html', title='Cambiar Contraseña')
+            
+        if new_password != confirm_password:
+            flash('Las contraseñas no coinciden.', 'danger')
+            return render_template('reset_token.html', title='Cambiar Contraseña')
+
+        is_valid, message = Usuario.validate_password_complexity(new_password)
+        if not is_valid:
+            flash(message, 'danger')
+            return render_template('reset_token.html', title='Cambiar Contraseña')
+
+        current_user.set_password(new_password, is_temporary=False)
+        db.session.commit()
+        flash('Tu contraseña ha sido actualizada correctamente.', 'success')
+        return redirect(url_for('mercado.index'))
+    
+    return render_template('reset_token.html', title='Cambiar Contraseña')
+
+@bp.route('/register', methods=['GET', 'POST'])
+def register():
     if current_user.is_authenticated:
         return redirect(url_for('mercado.index'))
-    user = Usuario.verify_reset_token(token)
-    if user is None:
-        flash('El token es inválido o ha expirado.', 'warning')
-        return redirect(url_for('mercado.reset_request'))
+    
     if request.method == 'POST':
-        password = request.form.get('password')
+        username = request.form.get('username', '')
+        email = request.form.get('email')
+        password = request.form.get('password', '')
         confirm_password = request.form.get('confirm_password')
+        
+        if not username:
+            flash('El nombre de usuario es obligatorio.', 'danger')
+            return render_template('register.html')
+            
         if password != confirm_password:
             flash('Las contraseñas no coinciden.', 'danger')
-            return render_template('reset_token.html', token=token)
+            return render_template('register.html')
+            
+        if Usuario.query.filter_by(username=username).first():
+            flash('El nombre de usuario ya está en uso.', 'danger')
+            return render_template('register.html')
+
+        if email and Usuario.query.filter_by(email=email).first():
+            flash('El correo electrónico ya está registrado.', 'danger')
+            return render_template('register.html')
+
+        is_valid, message = Usuario.validate_password_complexity(password)
+        if not is_valid:
+            flash(message, 'danger')
+            return render_template('register.html')
+            
+        user = Usuario(username=username, email=email)
         user.set_password(password)
+        db.session.add(user)
         db.session.commit()
-        flash('Tu contraseña ha sido actualizada. Ya puedes iniciar sesión.', 'success')
+        
+        flash('Cuenta creada exitosamente. Ya puedes iniciar sesión.', 'success')
         return redirect(url_for('mercado.login'))
-    return render_template('reset_token.html', token=token)
+        
+    return render_template('register.html')
 
 @bp.route('/login', methods=['GET', 'POST'])
 def login():
     if current_user.is_authenticated:
+        if current_user.is_temporary_password:
+             return redirect(url_for('mercado.change_password'))
         return redirect(url_for('mercado.index'))
         
     if request.method == 'POST':
-        username = request.form.get('username')
-        password = request.form.get('password')
+        username = request.form.get('username', '')
+        password = request.form.get('password', '')
         remember = True if request.form.get('remember') else False
         
         user = Usuario.query.filter_by(username=username).first()
@@ -75,6 +155,11 @@ def login():
             return redirect(url_for('mercado.login'))
             
         login_user(user, remember=remember)
+        
+        if user.is_temporary_password:
+            flash('Debes cambiar tu contraseña temporal.', 'warning')
+            return redirect(url_for('mercado.change_password'))
+
         next_page = request.args.get('next')
         return redirect(next_page) if next_page else redirect(url_for('mercado.index'))
         

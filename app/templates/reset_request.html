@@ -18,9 +18,9 @@
                 <div class="mb-3">
                     <label for="email" class="form-label">Correo Electrónico</label>
                     <input type="email" name="email" class="form-control" id="email" required autofocus placeholder="tu@email.com">
-                    <div class="form-text">Te enviaremos un enlace para restablecer tu clave.</div>
+                    <div class="form-text">Te enviaremos una <b>contraseña temporal</b> a tu correo.</div>
                 </div>
-                <button type="submit" class="btn btn-primary w-100">Enviar enlace</button>
+                <button type="submit" class="btn btn-primary w-100">Enviar contraseña temporal</button>
             </form>
             <div class="mt-3 text-center">
                 <a href="{{ url_for('mercado.login') }}" class="text-decoration-none small">Volver al inicio</a>

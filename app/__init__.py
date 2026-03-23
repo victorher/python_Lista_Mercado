@@ -13,18 +13,13 @@ csrf = CSRFProtect()
 login_manager = LoginManager()
 mail = Mail()
 
-def create_app(config_override=None):
+def create_app():
     app = Flask(__name__)
 
     # Configuración de seguridad
     app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev_key_default_123')
     app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'sqlite:///mercado.db')
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-
-    if config_override:
-        app.config.update(config_override)
-
-    # ... rest of the config ...
 
     # Configuración de Mail (SMTP) con conversión segura
     app.config['MAIL_SERVER'] = os.getenv('MAIL_SERVER', 'smtp.gmail.com')
