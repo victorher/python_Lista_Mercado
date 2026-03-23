@@ -116,6 +116,7 @@ def agregar():
     except (ValueError, TypeError):
         cantidad = 1
         
+    unidad_medida = request.form.get('unidad_medida')
     vencimiento_str = request.form.get('vencimiento')
     
     vencimiento = None
@@ -127,7 +128,12 @@ def agregar():
             flash('Formato de fecha de vencimiento inválido.', 'warning')
     
     try:
-        nuevo_prod = Producto(nombre=nombre, cantidad=cantidad, fecha_vencimiento=vencimiento)
+        nuevo_prod = Producto(
+            nombre=nombre, 
+            cantidad=cantidad, 
+            unidad_medida=unidad_medida, 
+            fecha_vencimiento=vencimiento
+        )
         db.session.add(nuevo_prod)
         db.session.commit()
         flash(f'Producto "{nombre}" agregado con éxito.', 'success')

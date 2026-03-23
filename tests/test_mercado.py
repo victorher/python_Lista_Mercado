@@ -4,15 +4,15 @@ from app.models.producto import db, Producto, Usuario
 
 @pytest.fixture
 def client():
-    app = create_app()
-    # Forzar base de datos en RAM para no tocar base datos producción
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'
-    app.config['TESTING'] = True
-    app.config['WTF_CSRF_ENABLED'] = False 
+    app = create_app({
+        'SQLALCHEMY_DATABASE_URI': 'sqlite:///:memory:',
+        'TESTING': True,
+        'WTF_CSRF_ENABLED': False 
+    })
 
     with app.test_client() as client:
         with app.app_context():
-            db.create_all()
+            # Las tablas ya se crearon en create_app() con la URI correcta
             # Crear usuario de prueba
             user = Usuario(username='testuser', email='test@test.com')
             user.set_password('testpass')
@@ -38,6 +38,21 @@ def test_agregar_producto(client):
     
     assert response.status_code == 200
     assert b'Leche' in response.data
+
+def test_agregar_producto_con_medida(client):
+    login(client, 'testuser', 'testpass')
+    # Enviar datos con unidad de medida
+    client.post('/agregar', data={
+        'nombre': 'Agua',
+        'cantidad': 5,
+        'unidad_medida': 'litros',
+        'vencimiento': ''
+    }, follow_redirects=True)
+    
+    with client.application.app_context():
+        prod = Producto.query.filter_by(nombre='Agua').first()
+        assert prod is not None
+        assert prod.unidad_medida == 'litros'
 
 def test_agregar_producto_invalido(client):
     login(client, 'testuser', 'testpass')
