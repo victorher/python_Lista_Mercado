@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block title %}Nueva Contraseña - Mercado Inteligente{% endblock %}
+
+{% block extra_css %}
+<style>
+    .login-container { max-width: 400px; margin: 40px auto; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="login-container">
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-4">
+            <h3 class="text-center mb-4">Nueva Contraseña</h3>
+            <form method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="mb-3">
+                    <label for="password" class="form-label">Nueva Contraseña</label>
+                    <input type="password" name="password" class="form-control" id="password" required autofocus>
+                </div>
+                <div class="mb-3">
+                    <label for="confirm_password" class="form-label">Confirmar Contraseña</label>
+                    <input type="password" name="confirm_password" class="form-control" id="confirm_password" required>
+                </div>
+                <button type="submit" class="btn btn-primary w-100">Actualizar Contraseña</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

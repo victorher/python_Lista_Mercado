@@ -1,0 +1,25 @@
+# Entornos virtuales
+venv/
+.venv/
+env/
+
+# Archivos de configuración sensible
+.env
+
+# Base de datos local
+instance/
+*.db
+
+# Archivos temporales de Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# IDEs
+.vscode/
+.idea/
+
+# Pruebas
+.pytest_cache/
+.coverage
+htmlcov/
