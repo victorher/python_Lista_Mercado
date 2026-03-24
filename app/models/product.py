@@ -22,6 +22,14 @@ class Product(db.Model):
     user_id: Mapped[int] = mapped_column(Integer, ForeignKey('users.id'), nullable=False)
     owner: Mapped["User"] = relationship("User", back_populates="products")
 
+    def __init__(self, name: str, user_id: int, quantity: int = 1, unit: Optional[str] = None, expiry_date: Optional[date] = None, in_stock: bool = False):
+        self.name = name
+        self.user_id = user_id
+        self.quantity = quantity
+        self.unit = unit
+        self.expiry_date = expiry_date
+        self.in_stock = in_stock
+
     @property
     def days_until_expiry(self) -> Optional[int]:
         if not self.expiry_date:

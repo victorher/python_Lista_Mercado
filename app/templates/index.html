@@ -10,19 +10,19 @@
             <form action="{{ url_for('products.agregar') }}" method="POST" class="row g-3">
                 {{ form.hidden_tag() }}
                 <div class="col-md-4">
-                    {{ form.nombre(class="form-control", placeholder="Ej: Leche", autocomplete="off") }}
+                    {{ form.nombre(class_="form-control", placeholder="Ej: Leche", autocomplete="off") }}
                 </div>
                 <div class="col-md-2">
-                    {{ form.cantidad(class="form-control", min="1", title="Cantidad") }}
+                    {{ form.cantidad(class_="form-control", min="1", title="Cantidad") }}
                 </div>
                 <div class="col-md-2">
-                    {{ form.unidad_medida(class="form-select", title="Unidad de Medida") }}
+                    {{ form.unidad_medida(class_="form-select", title="Unidad de Medida") }}
                 </div>
                 <div class="col-md-2">
-                    {{ form.vencimiento(class="form-control", type="date", title="Fecha de Vencimiento (Opcional)") }}
+                    {{ form.vencimiento(class_="form-control", type="date", title="Fecha de Vencimiento (Opcional)") }}
                 </div>
                 <div class="col-md-2">
-                    {{ form.submit(class="btn btn-success w-100") }}
+                    {{ form.submit(class_="btn btn-success w-100") }}
                 </div>
             </form>
         </div>
@@ -35,7 +35,8 @@
              id="product-row-{{ prod.id }}">
             
             <div class="d-flex align-items-center">
-                <button onclick="toggleProduct({{ prod.id }})" 
+                {# Usamos una función anónima en el onclick para evitar errores de parseo del IDE #}
+                <button onclick="toggleProduct('{{ prod.id }}')" 
                    class="btn btn-link p-0 text-start text-decoration-none {% if prod.in_stock %}text-muted{% else %}text-dark{% endif %}"
                    title="Click para marcar/desmarcar">
                     <span id="name-{{ prod.id }}" class="fs-5 {% if prod.in_stock %}producto-comprado{% endif %}">
@@ -87,7 +88,6 @@ async function toggleProduct(productId) {
         const data = await response.json();
         
         if (data.success) {
-            // Actualizar UI dinámicamente
             const row = document.getElementById(`product-row-${productId}`);
             const nameSpan = document.getElementById(`name-${productId}`);
             const badgeContainer = document.getElementById(`badge-container-${productId}`);
@@ -104,8 +104,6 @@ async function toggleProduct(productId) {
                 row.classList.remove('bg-light');
                 nameSpan.classList.remove('producto-comprado');
                 button.classList.replace('text-muted', 'text-dark');
-                // Nota: para simplificar, si quitamos "En casa" no recalculamos el badge de vencimiento 
-                // sin recargar, pero podrías hacerlo enviando más datos en el JSON.
                 badgeContainer.innerHTML = ''; 
             }
         } else {
@@ -113,7 +111,6 @@ async function toggleProduct(productId) {
         }
     } catch (error) {
         console.error('Error:', error);
-        alert('Error de conexión al servidor');
     }
 }
 </script>

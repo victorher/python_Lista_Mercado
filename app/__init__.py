@@ -22,12 +22,27 @@ def create_app(config_name=None):
     def load_user(user_id):
         return db.session.get(User, int(user_id))
 
-    # Registro de nuevos Blueprints con prefijos y nombres claros
+    # Registro de Blueprints
     from .routes.auth_routes import auth_bp
     from .routes.product_routes import product_bp
     
     app.register_blueprint(auth_bp, url_prefix='/auth')
     app.register_blueprint(product_bp, url_prefix='/')
+
+    # Registro de comandos CLI (Comando: flask create-admin)
+    @app.cli.command("create-admin")
+    def create_admin():
+        """Crea un usuario administrador inicial."""
+        from .services.auth_service import AuthService
+        admin_user, error = AuthService.register_user(
+            username="admin", 
+            email="admin@mercado.com", 
+            password="AdminPassword123*"
+        )
+        if error:
+            print(f"Error: {error}")
+        else:
+            print("Usuario administrador creado exitosamente.")
 
     with app.app_context():
         db.create_all()

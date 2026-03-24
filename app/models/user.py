@@ -25,6 +25,11 @@ class User(db.Model, UserMixin):
         cascade="all, delete-orphan"
     )
 
+    def __init__(self, username: str, email: str, is_active: bool = True):
+        self.username = username
+        self.email = email
+        self.is_active = is_active
+
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
 

@@ -1,8 +1,7 @@
-from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify
+from flask import Blueprint, render_template, redirect, url_for, flash, jsonify
 from flask_login import login_required, current_user
 from ..services.product_service import ProductService
 from ..forms.product_forms import ProductForm
-from datetime import datetime
 
 product_bp = Blueprint('products', __name__)
 
@@ -20,32 +19,37 @@ def agregar():
     if form.validate_on_submit():
         ProductService.create_product(
             user_id=current_user.id,
-            name=form.nombre.data,
-            quantity=form.cantidad.data,
+            name=form.nombre.data or "",
+            quantity=int(form.cantidad.data) if form.cantidad.data is not None else 1,
             unit=form.unidad_medida.data,
             expiry_date=form.vencimiento.data
         )
         flash(f'Producto "{form.nombre.data}" agregado.', 'success')
     else:
-        # Si hay errores de validación, los mostramos mediante flash
-        for fieldName, errorMessages in form.errors.items():
-            for error in errorMessages:
-                flash(f"Error en {form[fieldName].label.text}: {error}", 'danger')
+        # Centralización de errores de validación
+        for field, errors in form.errors.items():
+            for error in errors:
+                flash(f"{form[field].label.text}: {error}", 'danger')
                 
     return redirect(url_for('products.index'))
 
 @product_bp.route('/toggle/<int:id>', methods=['POST'])
 @login_required
 def toggle(id):
-    if ProductService.toggle_product_status(id, current_user.id):
-        return jsonify({"success": True, "message": "Estado actualizado"})
-    return jsonify({"success": False, "message": "No tienes permiso"}), 403
+    new_state = ProductService.toggle_product_status(id, current_user.id)
+    if new_state is not None:
+        return jsonify({
+            "success": True, 
+            "new_state": new_state,
+            "message": "Estado actualizado"
+        })
+    return jsonify({"success": False, "message": "Acceso denegado"}), 403
 
 @product_bp.route('/eliminar/<int:id>')
 @login_required
 def eliminar(id):
     if ProductService.delete_product(id, current_user.id):
-        flash('Producto eliminado.', 'success')
+        flash('Producto eliminado con éxito.', 'success')
     else:
-        flash('No tienes permiso.', 'danger')
+        flash('Error: No se pudo eliminar el producto.', 'danger')
     return redirect(url_for('products.index'))
