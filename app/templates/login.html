@@ -15,28 +15,33 @@
             <h2 class="text-center mb-4">🛒 Ingresar</h2>
 
             <form method="POST">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                {{ form.hidden_tag() }}
                 <div class="mb-3">
-                    <label for="username" class="form-label">Usuario</label>
-                    <input type="text" name="username" class="form-control" id="username" required autofocus>
+                    {{ form.username.label(class="form-label") }}
+                    {{ form.username(class="form-control" + (" is-invalid" if form.username.errors else ""), autofocus=True) }}
+                    {% for error in form.username.errors %}
+                        <div class="invalid-feedback">{{ error }}</div>
+                    {% endfor %}
                 </div>
                 <div class="mb-3">
-                    <label for="password" class="form-label">Contraseña</label>
-                    <input type="password" name="password" class="form-control" id="password" required>
+                    {{ form.password.label(class="form-label") }}
+                    {{ form.password(class="form-control" + (" is-invalid" if form.password.errors else "")) }}
+                    {% for error in form.password.errors %}
+                        <div class="invalid-feedback">{{ error }}</div>
+                    {% endfor %}
                 </div>
                 <div class="mb-3 form-check d-flex justify-content-between">
                     <div>
-                        <input type="checkbox" name="remember" class="form-check-input" id="remember">
-                        <label class="form-check-label" for="remember">Recordarme</label>
+                        {{ form.remember(class="form-check-input") }}
+                        {{ form.remember.label(class="form-check-label") }}
                     </div>
-                    <a href="{{ url_for('mercado.reset_request') }}" class="text-decoration-none small">¿Olvidaste tu contraseña?</a>
+                    <a href="{{ url_for('auth.reset_request') }}" class="text-decoration-none small">¿Olvidaste tu contraseña?</a>
                 </div>
-                <button type="submit" class="btn btn-primary w-100">Entrar</button>
+                {{ form.submit(class="btn btn-primary w-100") }}
             </form>
         </div>
         <div class="card-footer text-muted text-center border-0 bg-transparent">
-            <small>¿No tienes una cuenta? <a href="{{ url_for('mercado.register') }}" class="text-decoration-none">Regístrate aquí</a></small><br>
-            <small>Usa <b>admin</b> / <b>Admin@123*</b> para probar</small>
+            <small>¿No tienes una cuenta? <a href="{{ url_for('auth.register') }}" class="text-decoration-none">Regístrate aquí</a></small>
         </div>
     </div>
 </div>

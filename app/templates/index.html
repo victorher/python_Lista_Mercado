@@ -7,64 +7,56 @@
     <div class="card mb-4 shadow-sm border-0">
         <div class="card-body">
             <h5 class="card-title mb-3">Agregar nuevo producto</h5>
-            <form action="{{ url_for('mercado.agregar') }}" method="POST" class="row g-3">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <form action="{{ url_for('products.agregar') }}" method="POST" class="row g-3">
+                {{ form.hidden_tag() }}
                 <div class="col-md-4">
-                    <input type="text" name="nombre" class="form-control" placeholder="Ej: Leche" required autocomplete="off">
+                    {{ form.nombre(class="form-control", placeholder="Ej: Leche", autocomplete="off") }}
                 </div>
                 <div class="col-md-2">
-                    <input type="number" name="cantidad" class="form-control" value="1" min="1" title="Cantidad">
+                    {{ form.cantidad(class="form-control", min="1", title="Cantidad") }}
                 </div>
                 <div class="col-md-2">
-                    <select name="unidad_medida" class="form-select" title="Unidad de Medida">
-                        <option value="unidades">Unidades</option>
-                        <option value="litros">L</option>
-                        <option value="mililitros">ml</option>
-                        <option value="gramos">g</option>
-                        <option value="kilogramos">Kg</option>
-                        <option value="libras">Lb</option>
-                        <option value="onzas">Oz</option>
-                        <option value="paca">Pk</option>
-                    </select>
+                    {{ form.unidad_medida(class="form-select", title="Unidad de Medida") }}
                 </div>
                 <div class="col-md-2">
-                    <input type="date" name="vencimiento" class="form-control" title="Fecha de Vencimiento (Opcional)">
+                    {{ form.vencimiento(class="form-control", type="date", title="Fecha de Vencimiento (Opcional)") }}
                 </div>
                 <div class="col-md-2">
-                    <button type="submit" class="btn btn-success w-100">+ Agregar</button>
+                    {{ form.submit(class="btn btn-success w-100") }}
                 </div>
             </form>
         </div>
     </div>
 
     <!-- Lista de Productos -->
-    <div class="list-group shadow-sm border-0">
+    <div id="product-list" class="list-group shadow-sm border-0">
         {% for prod in productos %}
-        <div class="list-group-item d-flex justify-content-between align-items-center {% if prod.tengo_en_casa %}bg-light{% endif %} border-0 border-bottom">
+        <div class="list-group-item d-flex justify-content-between align-items-center {% if prod.in_stock %}bg-light{% endif %} border-0 border-bottom" 
+             id="product-row-{{ prod.id }}">
             
             <div class="d-flex align-items-center">
-                <a href="{{ url_for('mercado.toggle_comprado', id=prod.id) }}" 
-                   class="text-decoration-none {% if prod.tengo_en_casa %}text-muted{% else %}text-dark{% endif %}"
+                <button onclick="toggleProduct({{ prod.id }})" 
+                   class="btn btn-link p-0 text-start text-decoration-none {% if prod.in_stock %}text-muted{% else %}text-dark{% endif %}"
                    title="Click para marcar/desmarcar">
-                    <span class="fs-5 {% if prod.tengo_en_casa %}producto-comprado{% endif %}">
-                        {{ prod.nombre }} 
+                    <span id="name-{{ prod.id }}" class="fs-5 {% if prod.in_stock %}producto-comprado{% endif %}">
+                        {{ prod.name }} 
                         <small class="text-secondary">
-                            (x{{ prod.cantidad }} {{ prod.unidad_medida if prod.unidad_medida else '' }})
+                            (x{{ prod.quantity }} {{ prod.unit if prod.unit else '' }})
                         </small>
                     </span>
-                </a>
+                </button>
             </div>
 
-            <div>
-                {% if prod.fecha_vencimiento and not prod.tengo_en_casa %}
-                    {% if prod.estado_vencimiento == 'vencido' %}
-                        <span class="badge bg-danger rounded-pill" title="{{ prod.fecha_vencimiento }}">¡{{ prod.dias_vencimiento_texto }}!</span>
-                    {% elif prod.estado_vencimiento == 'por_vencer' %}
-                        <span class="badge bg-warning text-dark rounded-pill" title="{{ prod.fecha_vencimiento }}">{{ prod.dias_vencimiento_texto }}</span>
+            <div id="badge-container-{{ prod.id }}">
+                {% if prod.expiry_date and not prod.in_stock %}
+                    {% if prod.expiry_status == 'expired' %}
+                        <span class="badge bg-danger rounded-pill">¡{{ prod.expiry_text }}!</span>
+                    {% elif prod.expiry_status == 'warning' %}
+                        <span class="badge bg-warning text-dark rounded-pill">{{ prod.expiry_text }}</span>
                     {% else %}
-                        <span class="badge bg-success rounded-pill" title="{{ prod.fecha_vencimiento }}">{{ prod.dias_vencimiento_texto }}</span>
+                        <span class="badge bg-success rounded-pill">{{ prod.expiry_text }}</span>
                     {% endif %}
-                {% elif prod.tengo_en_casa %}
+                {% elif prod.in_stock %}
                     <span class="badge bg-secondary rounded-pill">En casa</span>
                 {% endif %}
             </div>
@@ -76,4 +68,53 @@
         </div>
         {% endfor %}
     </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+async function toggleProduct(productId) {
+    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+    
+    try {
+        const response = await fetch(`/toggle/${productId}`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrfToken,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        const data = await response.json();
+        
+        if (data.success) {
+            // Actualizar UI dinámicamente
+            const row = document.getElementById(`product-row-${productId}`);
+            const nameSpan = document.getElementById(`name-${productId}`);
+            const badgeContainer = document.getElementById(`badge-container-${productId}`);
+            const button = nameSpan.parentElement;
+
+            const isNowInStock = !nameSpan.classList.contains('producto-comprado');
+
+            if (isNowInStock) {
+                row.classList.add('bg-light');
+                nameSpan.classList.add('producto-comprado');
+                button.classList.replace('text-dark', 'text-muted');
+                badgeContainer.innerHTML = '<span class="badge bg-secondary rounded-pill">En casa</span>';
+            } else {
+                row.classList.remove('bg-light');
+                nameSpan.classList.remove('producto-comprado');
+                button.classList.replace('text-muted', 'text-dark');
+                // Nota: para simplificar, si quitamos "En casa" no recalculamos el badge de vencimiento 
+                // sin recargar, pero podrías hacerlo enviando más datos en el JSON.
+                badgeContainer.innerHTML = ''; 
+            }
+        } else {
+            alert(data.message);
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Error de conexión al servidor');
+    }
+}
+</script>
 {% endblock %}
